@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # تجاهل الملفات والمجلدات الموجودة
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # إعادة توجيه كل شيء إلى index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>

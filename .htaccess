@@ -1,0 +1,6 @@
+RewriteEngine On
+
+# إذا الرابط لا يبدأ بـ /public → وجهه إلى /public
+RewriteCond %{REQUEST_URI} !^/public
+RewriteRule ^(.*)$ public/$1 [L]
+
