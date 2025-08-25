@@ -10,7 +10,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-
 class UserController {
     private $userModel;
     private $table = 'users'; // اسم الجدول للـ Logger
@@ -41,7 +40,6 @@ class UserController {
 
         $totalPages = ceil($total / $perPage);
 
-       
         echo json_encode([
             'data' => $users,
             'pagination' => [
@@ -60,7 +58,6 @@ class UserController {
         $user = $this->userModel->find($id);
         Logger::log($this->table, "تم جلب بيانات المستخدم بالمعرف: $id", "INFO");
 
-       
         echo json_encode(['data' => $user]);
         exit;
     }
@@ -81,15 +78,23 @@ class UserController {
             'role' => $input['role'] ?? 'user'
         ];
 
-        $result = $this->userModel->create($data);
+        $newId = $this->userModel->create($data);
 
-       
-        if (!$result) {
+        if (!$newId) {
             Logger::log($this->table, "فشل إنشاء المستخدم، البريد موجود مسبقًا: $email", "ERROR");
-            echo json_encode(['status' => 'error', 'message' => '❌ البريد الإلكتروني موجود مسبقًا. اختر بريدًا آخر.']);
+            echo json_encode([
+                'status' => 'error',
+                'message' => '❌ البريد الإلكتروني موجود مسبقًا. اختر بريدًا آخر.'
+            ]);
         } else {
             Logger::log($this->table, "تم إنشاء مستخدم جديد بالبريد: $email", "INFO");
-            echo json_encode(['status' => 'success', 'data' => $result]);
+            echo json_encode([
+                'status' => 'success',
+                'message' => '✅ تم إضافة المستخدم بنجاح',
+                'action' => 'insert',
+                'id' => $newId,
+                'data' => $data
+            ]);
         }
         exit;
     }
@@ -115,8 +120,13 @@ class UserController {
         $this->userModel->update($id, $data);
         Logger::log($this->table, "تم تحديث بيانات المستخدم بالمعرف: $id", "INFO");
 
-       
-        echo json_encode(['status' => 'success', 'data' => $data]);
+        echo json_encode([
+            'status' => 'success',
+            'message' => '✅ تم تعديل المستخدم بنجاح',
+            'action' => 'update',
+            'id' => $id,
+            'data' => $data
+        ]);
         exit;
     }
 
@@ -125,8 +135,7 @@ class UserController {
         $this->userModel->softDelete($id);
         Logger::log($this->table, "تم حذف المستخدم مؤقتًا بالمعرف: $id", "WARNING");
 
-       
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '🗑️ تم حذف المستخدم مؤقتًا']);
         exit;
     }
 
@@ -136,8 +145,7 @@ class UserController {
         $this->userModel->restore($id);
         Logger::log($this->table, "تم استعادة المستخدم المحذوف بالمعرف: $id", "INFO");
 
-        
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '✅ تم استعادة المستخدم']);
         exit;
     }
 
@@ -147,8 +155,7 @@ class UserController {
         $this->userModel->destroy($id);
         Logger::log($this->table, "تم حذف المستخدم نهائيًا بالمعرف: $id", "WARNING");
 
-       
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '🚫 تم حذف المستخدم نهائيًا']);
         exit;
     }
 

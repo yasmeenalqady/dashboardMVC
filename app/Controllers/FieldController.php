@@ -41,6 +41,7 @@ class FieldController {
         $totalPages = ceil($total / $perPage);
 
         echo json_encode([
+            'status' => 'success',
             'data' => $fields,
             'pagination' => [
                 'current_page' => $currentPage,
@@ -58,7 +59,7 @@ class FieldController {
         $field = $this->fieldModel->find($id);
         Logger::log($this->table, "تم جلب بيانات المجال بالمعرف: $id", "INFO");
 
-        echo json_encode(['data' => $field]);
+        echo json_encode(['status' => 'success', 'data' => $field]);
         exit;
     }
 
@@ -67,21 +68,27 @@ class FieldController {
         AuthController::check();
         $input = json_decode(file_get_contents("php://input"), true);
 
-          $data = [
-           'name' => $input['name'] ?? '',
-           'description' => $input['description'] ?? '',
-           'status' => !empty($input['status']) ? 1 : 0  // تحويل تلقائي إلى 1 أو 0
-           ];
+        $data = [
+            'name'        => $input['name'] ?? '',
+            'description' => $input['description'] ?? '',
+            'status'      => !empty($input['status']) ? 1 : 0,
+            'created_at'  => date('Y-m-d H:i:s'),
+            'updated_at'  => date('Y-m-d H:i:s')
+        ];
 
+        $id = $this->fieldModel->create($data);
 
-        $result = $this->fieldModel->create($data);
-
-        if (!$result) {
+        if (!$id) {
             Logger::log($this->table, "فشل إنشاء المجال", "ERROR");
             echo json_encode(['status' => 'error', 'message' => '❌ فشل إنشاء المجال.']);
         } else {
             Logger::log($this->table, "تم إنشاء مجال جديد: {$data['name']}", "INFO");
-            echo json_encode(['status' => 'success', 'data' => $data]);
+            echo json_encode([
+                'status' => 'success',
+                'id'     => $id,
+                'message'=> '✅ تم إضافة المجال بنجاح',
+                'data'   => $data
+            ]);
         }
         exit;
     }
@@ -92,16 +99,25 @@ class FieldController {
         $input = json_decode(file_get_contents("php://input"), true);
 
         $data = [
-            'name' => $input['name'] ?? '',
+            'name'        => $input['name'] ?? '',
             'description' => $input['description'] ?? '',
-            // 🚀 هنا أيضاً
-            'status' => isset($input['status']) ? (int) $input['status'] : 0
+            'status'      => isset($input['status']) ? (int) $input['status'] : 0,
+            'updated_at'  => date('Y-m-d H:i:s')
         ];
 
-        $this->fieldModel->update($id, $data);
-        Logger::log($this->table, "تم تحديث بيانات المجال بالمعرف: $id", "INFO");
+        $updated = $this->fieldModel->update($id, $data);
 
-        echo json_encode(['status' => 'success', 'data' => $data]);
+        if (!$updated) {
+            echo json_encode(['status' => 'error', 'message' => '❌ فشل تحديث المجال.']);
+        } else {
+            Logger::log($this->table, "تم تحديث بيانات المجال بالمعرف: $id", "INFO");
+            echo json_encode([
+                'status' => 'success',
+                'id'     => $id,
+                'message'=> '✅ تم تعديل المجال بنجاح',
+                'data'   => $data
+            ]);
+        }
         exit;
     }
 
@@ -110,17 +126,17 @@ class FieldController {
         $this->fieldModel->softDelete($id);
         Logger::log($this->table, "تم حذف المجال مؤقتًا بالمعرف: $id", "WARNING");
 
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '🗑️ تم الحذف مؤقتًا']);
         exit;
     }
 
-    // استعادة مجال محذوف مع Pagination
+    // استعادة مجال محذوف
     public function restore($id) {
         AuthController::check();
         $this->fieldModel->restore($id);
         Logger::log($this->table, "تم استعادة المجال المحذوف بالمعرف: $id", "INFO");
 
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '♻️ تم الاستعادة']);
         exit;
     }
 
@@ -130,22 +146,16 @@ class FieldController {
         $this->fieldModel->destroy($id);
         Logger::log($this->table, "تم حذف المجال نهائيًا بالمعرف: $id", "WARNING");
 
-        echo json_encode(['status' => 'success']);
+        echo json_encode(['status' => 'success', 'message' => '❌ تم الحذف نهائيًا']);
         exit;
     }
 
-    // عرض المجالات المحذوفة مع Pagination
-     public function deleted() {
-    AuthController::check(); // تأكد من تسجيل الدخول
+    // عرض المجالات المحذوفة
+    public function deleted() {
+        AuthController::check();
+        $deletedFields = $this->fieldModel->allDeleted();
 
-    // جلب جميع المجالات المحذوفة بدون Pagination
-    $deletedFields = $this->fieldModel->allDeleted();
-
-    // إعادة البيانات بصيغة JSON
-    echo json_encode([
-        'data' => $deletedFields
-    ]);
-    exit;
-}
-
+        echo json_encode(['status' => 'success', 'data' => $deletedFields]);
+        exit;
+    }
 }
