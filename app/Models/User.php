@@ -159,5 +159,10 @@ public function countSearch($term) {
     $stmt->execute();
     return $stmt->fetchColumn();
 }
+  public function countUsers() {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
+    }
 
 }
